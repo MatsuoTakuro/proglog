@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -36,10 +35,3 @@ func (l *Log) Read(offset uint64) (Record, error) {
 
 	return l.records[offset], nil
 }
-
-type Record struct {
-	Value  []byte `json:"value"`
-	Offset uint64 `json:"offset"`
-}
-
-var ErrOffsetNotFound = fmt.Errorf("offset not found")
