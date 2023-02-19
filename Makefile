@@ -2,7 +2,7 @@
 run_local:
 	go run ./cmd/server/main.go
 
-test_ch1: produce consume
+ch1_test: produce consume
 
 produce:
 	http POST localhost:18080 \
@@ -21,3 +21,12 @@ consume:
 		offset:=2
 	http GET localhost:18080 \
 		offset:=3
+
+compile: # first, you need to do 'brew install protoc-gen-go'
+	protoc ./api/v1/*.proto \
+		--go_out=. \
+		--go_opt=paths=source_relative \
+		--proto_path=.
+
+test:
+	go test -race ./...
