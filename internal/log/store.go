@@ -13,6 +13,7 @@ var (
 )
 
 const (
+	// fixed width to store size of record
 	widthRecordSizeStored = 8
 )
 
