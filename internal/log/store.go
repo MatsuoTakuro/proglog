@@ -14,7 +14,7 @@ var (
 
 const (
 	// fixed width to store size of record
-	widthRecordSizeStored = 8
+	recordSizeWidth = 8
 )
 
 type store struct {
@@ -55,7 +55,7 @@ func (s *store) Append(record []byte) (n uint64, position uint64, err error) {
 		return 0, 0, err
 	}
 
-	nw += widthRecordSizeStored
+	nw += recordSizeWidth
 	s.size += uint64(nw)
 	return uint64(nw), position, nil
 }
@@ -69,14 +69,14 @@ func (s *store) Read(position uint64) ([]byte, error) {
 	}
 
 	// read size of record
-	size := make([]byte, widthRecordSizeStored)
+	size := make([]byte, recordSizeWidth)
 	if _, err := s.File.ReadAt(size, int64(position)); err != nil {
 		return nil, err
 	}
 
 	// read record
 	record := make([]byte, enc.Uint64(size))
-	if _, err := s.File.ReadAt(record, int64(position+widthRecordSizeStored)); err != nil {
+	if _, err := s.File.ReadAt(record, int64(position+recordSizeWidth)); err != nil {
 		return nil, err
 	}
 
