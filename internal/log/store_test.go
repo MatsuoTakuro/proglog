@@ -1,7 +1,6 @@
 package log
 
 import (
-	"log"
 	"os"
 	"testing"
 
@@ -120,15 +119,4 @@ func openFile(name string) (file *os.File, size int64, err error) {
 	}
 
 	return f, fi.Size(), nil
-}
-
-// print content of file for debugging
-func printFile(t *testing.T, name string) {
-	t.Helper()
-
-	b, err := os.ReadFile(name)
-	if err != nil {
-		t.Error(err)
-	}
-	log.Println(string(b))
 }

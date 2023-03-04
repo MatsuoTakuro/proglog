@@ -12,5 +12,6 @@ require (
 
 require (
 	github.com/stretchr/testify v1.8.2
+	github.com/tysonmote/gommap v0.0.2
 	google.golang.org/protobuf v1.28.1
 )
