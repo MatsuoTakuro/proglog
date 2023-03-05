@@ -14,7 +14,7 @@ func TestIndex(t *testing.T) {
 	defer os.Remove(f.Name())
 
 	cfg := Config{}
-	cfg.Segment.MaxIndexBytes = 1024
+	cfg.Segment.MaxIndexBytes = 1024 // 1 kilo byte
 	idx, err := newIndex(f, cfg)
 	require.NoError(t, err)
 	_, _, err = idx.Read(-1)
