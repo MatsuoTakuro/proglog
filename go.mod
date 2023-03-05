@@ -1,6 +1,6 @@
 module github.com/MatsuoTakuro/proglog
 
-go 1.19
+go 1.18
 
 require github.com/gorilla/mux v1.8.0
 
