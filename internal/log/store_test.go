@@ -38,7 +38,7 @@ func testAppend(t *testing.T, s *store) {
 		require.NoError(t, err)
 		require.Equal(t, position+nw, totalWidth*i)
 	}
-	printFile(t, s.File.Name()) // print no content because store.Append does not flush
+	// printFile(t, s.File.Name()) // print no content because store.Append does not flush
 }
 
 func testRead(t *testing.T, s *store) {
@@ -51,7 +51,7 @@ func testRead(t *testing.T, s *store) {
 		require.Equal(t, record, read)
 		position += totalWidth
 	}
-	printFile(t, s.File.Name())
+	// printFile(t, s.File.Name())
 }
 
 func testReadAt(t *testing.T, s *store) {
@@ -72,7 +72,7 @@ func testReadAt(t *testing.T, s *store) {
 		require.Equal(t, int(size), nr)
 		off += int64(nr)
 	}
-	printFile(t, s.File.Name())
+	// printFile(t, s.File.Name())
 }
 
 func TestStoreClose(t *testing.T) {
@@ -90,15 +90,15 @@ func TestStoreClose(t *testing.T) {
 	f, beforeSize, err := openFile(f.Name())
 	require.NoError(t, err)
 
-	printFile(t, f.Name())
+	// printFile(t, f.Name())
 
 	err = s.Close()
 	require.NoError(t, err)
 
-	f, afterSize, err := openFile(f.Name())
+	_, afterSize, err := openFile(f.Name())
 	require.NoError(t, err)
 
-	printFile(t, f.Name())
+	// printFile(t, f.Name())
 
 	require.True(t, afterSize > beforeSize)
 }
