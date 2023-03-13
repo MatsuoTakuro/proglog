@@ -149,3 +149,18 @@ func (s *segment) Close() error {
 
 	return nil
 }
+
+// originalReader is a io.Reader for a store (per a segment).
+type originalReader struct {
+	*store
+	off int64
+}
+
+// Read reads an entire store file from a given position (size).
+// it also can be called by an io.MultiReader a log has
+func (o *originalReader) Read(size []byte) (int, error) {
+	n, err := o.ReadAt(size, o.off)
+	o.off += int64(n)
+
+	return n, err
+}

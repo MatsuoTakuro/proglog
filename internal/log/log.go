@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path"
@@ -140,7 +139,7 @@ func (l *Log) Read(off uint64) (*api.Record, error) {
 	}
 
 	if s == nil || s.nextOffset <= off {
-		return nil, fmt.Errorf("offset out of range: %d", off)
+		return nil, api.ErrOffsetOutOfRange{Offset: off}
 	}
 
 	return s.Read(off)
@@ -206,21 +205,6 @@ func (l *Log) Truncate(lowest uint64) error {
 	l.segments = ss
 
 	return nil
-}
-
-// originalReader is a io.Reader for a store (per a segment).
-type originalReader struct {
-	*store
-	off int64
-}
-
-// Read reads an entire store file from a given position (size).
-// it also can be called by an io.MultiReader a log has
-func (o *originalReader) Read(size []byte) (int, error) {
-	n, err := o.ReadAt(size, o.off)
-	o.off += int64(n)
-
-	return n, err
 }
 
 // Readers returns an io.MultiReader that can read an entire log by consolidating stores segments have.
