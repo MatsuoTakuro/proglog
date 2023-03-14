@@ -27,8 +27,10 @@ type CommitLog interface {
 	Read(uint64) (*api.Record, error)
 }
 
-func NewGRPCServer(cfg *Config) (*grpc.Server, error) {
-	gsrv := grpc.NewServer()
+func NewGRPCServer(cfg *Config, grpcOpts ...grpc.ServerOption) (
+	*grpc.Server, error,
+) {
+	gsrv := grpc.NewServer(grpcOpts...)
 	srv, err := newGRPCServer(cfg)
 	if err != nil {
 		return nil, err

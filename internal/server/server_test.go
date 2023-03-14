@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	api "github.com/MatsuoTakuro/proglog/api/v1"
+	"github.com/MatsuoTakuro/proglog/internal/config"
 	"github.com/MatsuoTakuro/proglog/internal/log"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 )
 
@@ -40,12 +41,33 @@ func setupTest(t *testing.T, fn func(*Config)) (
 	t.Helper()
 
 	// port 0 can automatically allocate a free port
-	l, err := net.Listen("tcp", ":0")
+	l, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	conn, err := grpc.Dial(l.Addr().String(), opts...)
+	// create a client with connection over TLS
+	clientTLSConfig, err := config.SetupTLSConfig(
+		config.TLSConfig{CAFile: config.CAFile},
+	)
 	require.NoError(t, err)
+	clientCreds := credentials.NewTLS(clientTLSConfig)
+
+	conn, err := grpc.Dial(l.Addr().String(),
+		grpc.WithTransportCredentials(clientCreds),
+		// grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+
+	cli = api.NewLogClient(conn)
+
+	// build a server with connection over TLS
+	serverTLSConfig, err := config.SetupTLSConfig(config.TLSConfig{
+		CertFile:      config.ServerCertFile,
+		KeyFile:       config.ServerKeyFile,
+		CAFile:        config.CAFile,
+		ServerAddress: l.Addr().String(),
+	})
+	require.NoError(t, err)
+	serverCreds := credentials.NewTLS(serverTLSConfig)
 
 	dir, err := os.MkdirTemp("", "grpc-server-test")
 	require.NoError(t, err)
@@ -60,15 +82,13 @@ func setupTest(t *testing.T, fn func(*Config)) (
 		fn(cfg)
 	}
 
-	srv, err := NewGRPCServer(cfg)
+	srv, err := NewGRPCServer(cfg, grpc.Creds(serverCreds))
 	require.NoError(t, err)
 
 	// use goroutine for *grpc.Server.Serve cuz it is a blocking call
 	go func() {
 		srv.Serve(l)
 	}()
-
-	cli = api.NewLogClient(conn)
 
 	return cli, cfg, func() {
 		conn.Close()
