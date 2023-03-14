@@ -20,7 +20,15 @@ gencert:
 		-profile=server \
 		test/server-csr.json | cfssljson -bare server
 
-#	Generate a new key and cert for root-client
+#	Generate a new key and cert for client
+	cfssl gencert \
+		-ca=ca.pem \
+		-ca-key=ca-key.pem \
+		-config=test/ca-config.json \
+		-profile=client \
+		test/client-csr.json | cfssljson -bare client
+
+#	Generate a new key and cert for root-client (for auth based on ACL)
 	cfssl gencert \
 		-ca=ca.pem \
 		-ca-key=ca-key.pem \
@@ -29,7 +37,7 @@ gencert:
 		-cn="root" \
 		test/client-csr.json | cfssljson -bare root-client
 
-#	Generate a new key and cert for nobody-client
+#	Generate a new key and cert for nobody-client (for auth based on ACL)
 	cfssl gencert \
 		-ca=ca.pem \
 		-ca-key=ca-key.pem \
@@ -43,6 +51,19 @@ gencert:
 
 show_configs:
 	ls -l ${CONFIG_PATH}
+
+gencert_another_ca_and_client: # for testing
+	cfssl gencert \
+		-initca test/ca-csr_another.json | cfssljson -bare ca_another
+
+	cfssl gencert \
+		-ca=ca_another.pem \
+		-ca-key=ca_another-key.pem \
+		-config=test/ca-config.json \
+		-profile=client \
+		test/client-csr.json | cfssljson -bare client_another
+
+	mv *pem *.csr ${CONFIG_PATH}
 
 run_local:
 	go run ./cmd/server/main.go
