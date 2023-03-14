@@ -110,7 +110,8 @@ func testProduceConsumeStream(t *testing.T, cli api.LogClient, cfg *Config) {
 		},
 	}
 
-	// TODO: whats just {} (curly brackets) means
+	// whats just {} (curly brackets) means?
+	// -> that answer is whatever happens in that scope, stays in that scope. Variable declarations, calculations, etc.
 	{
 		strmCli, err := cli.ProduceStream(ctx)
 		require.NoError(t, err)
