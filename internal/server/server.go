@@ -7,8 +7,13 @@ import (
 	api "github.com/MatsuoTakuro/proglog/api/v1"
 	"github.com/MatsuoTakuro/proglog/internal/auth"
 	"github.com/MatsuoTakuro/proglog/internal/server/middleware"
+	"go.opencensus.io/plugin/ocgrpc"
+
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+
 	"google.golang.org/grpc"
 )
 
@@ -47,17 +52,30 @@ type Config struct {
 func NewGRPCServer(cfg *Config, grpcOpts ...grpc.ServerOption) (
 	*grpc.Server, error,
 ) {
+	logger, logOpts := middleware.NewSrvLogger()
+
+	err := middleware.SetMetricsAndTracer()
+	if err != nil {
+		return nil, err
+	}
+
 	grpcOpts = append(grpcOpts,
 		grpc.StreamInterceptor(
 			grpc_middleware.ChainStreamServer(
+				grpc_ctxtags.StreamServerInterceptor(), // for tracing
+				grpc_zap.StreamServerInterceptor(logger, logOpts...),
 				grpc_auth.StreamServerInterceptor(middleware.Authenticate),
 			),
 		),
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
+				grpc_ctxtags.UnaryServerInterceptor(), // for tracing
+				grpc_zap.UnaryServerInterceptor(logger, logOpts...),
 				grpc_auth.UnaryServerInterceptor(middleware.Authenticate),
 			),
 		),
+		// for metrics to collect data as stats
+		grpc.StatsHandler(&ocgrpc.ServerHandler{}),
 	)
 
 	gsrv := grpc.NewServer(grpcOpts...)

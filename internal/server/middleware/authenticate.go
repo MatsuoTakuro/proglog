@@ -29,10 +29,10 @@ func Authenticate(ctx context.Context) (context.Context, error) {
 		return context.WithValue(ctx, auth.SubjectContextKey(), ""), nil
 	}
 
-	// gets tls info from peer, followed by getting a subject from it
+	// get tls info from peer, followed by getting a subject from it
 	tls := peer.AuthInfo.(credentials.TLSInfo)
 	subject := tls.State.VerifiedChains[0][0].Subject.CommonName
-	// set subject to context with its key
+	// set a subject to context with its key
 	ctx = context.WithValue(ctx, auth.SubjectContextKey(), subject)
 
 	return ctx, nil

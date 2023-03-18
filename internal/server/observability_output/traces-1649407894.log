@@ -1,0 +1,53 @@
+
+#----------------------------------------------
+
+TraceID:      95ac8aa52a1c09ada7d6991eef2c84c5
+SpanID:       13eff9d62b262f83
+
+Span:    log.v1.Log.Produce
+Status:   [0]
+Elapsed: 0s
+SpanKind: Server
+
+Attributes:
+  - FailFast=false
+  - Client=false
+
+MessageEvents:
+Received
+UncompressedByteSize: 15
+CompressedByteSize: 20
+
+Sent
+UncompressedByteSize: 0
+CompressedByteSize: 5
+
+
+#----------------------------------------------
+
+TraceID:      1289f7a7ab695567dceb537f9d32baba
+SpanID:       c02485788ea74d1f
+
+Span:    log.v1.Log.Consume
+Status:  offset out of range: 1 [11]
+Elapsed: 1ms
+SpanKind: Server
+
+Attributes:
+  - Client=false
+  - FailFast=false
+
+MessageEvents:
+Received
+UncompressedByteSize: 2
+CompressedByteSize: 7
+
+
+#----------------------------------------------
+
+TraceID:      435c8992a3896297219297f194e41d33
+SpanID:       6d5a101af1286cbb
+
+Span:    
+Status:   [0]
+Elapsed: 2ms

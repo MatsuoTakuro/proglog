@@ -1,0 +1,11 @@
+// 2023-03-18T17:21:03.774+0900    INFO    server  zap/options.go:212      finished unary call with code OK       
+{
+  "grpc.start_time": "2023-03-18T17:21:03+09:00",
+  "system": "grpc",
+  "span.kind": "server",
+  "grpc.service": "log.v1.Log",
+  "grpc.method": "Produce",
+  "peer.address": "127.0.0.1:51705",
+  "grpc.code": "OK",
+  "grpc.time_ns": 188666 // an added field
+}

@@ -70,7 +70,7 @@ run_local:
 
 ch1_test: produce consume
 
-produce:
+http_produce:
 	http POST localhost:18080 \
 		record[value]='TGV0J3MgR28gIzEK'
 	http POST localhost:18080 \
@@ -78,7 +78,7 @@ produce:
 	http POST localhost:18080 \
 		record[value]='TGV0J3MgR28gIzMK'
 
-consume:
+http_consume:
 	http GET localhost:18080 \
 		offset:=0
 	http GET localhost:18080 \
@@ -107,3 +107,6 @@ $(CONFIG_PATH)/model.conf:
 .PHONY: test
 test: $(CONFIG_PATH)/policy.csv $(CONFIG_PATH)/model.conf
 	go test -race ./...
+
+test_with_observability:
+	go test ./internal/server -v -debug=true

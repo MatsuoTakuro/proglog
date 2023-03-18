@@ -1,0 +1,69 @@
+
+#----------------------------------------------
+
+TraceID:      52d19c1c0067ab7a488cc4905733a651
+SpanID:       0c4e58f203a2d3ae
+
+Span:    log.v1.Log.ProduceStream
+Status:  context canceled [1]
+Elapsed: 1ms
+SpanKind: Server
+
+Attributes:
+  - FailFast=false
+  - Client=false
+
+MessageEvents:
+Received
+UncompressedByteSize: 17
+CompressedByteSize: 22
+
+Sent
+UncompressedByteSize: 0
+CompressedByteSize: 5
+
+Received
+UncompressedByteSize: 20
+CompressedByteSize: 25
+
+Sent
+UncompressedByteSize: 2
+CompressedByteSize: 7
+
+
+#----------------------------------------------
+
+TraceID:      7368133189d9ea08f0b50ef8175c5f9f
+SpanID:       66b96e35c9a410e7
+
+Span:    
+Status:   [0]
+Elapsed: 4ms
+
+#----------------------------------------------
+
+TraceID:      2b722bdc36b15f2cc9331741c5eee9e8
+SpanID:       b983e3936623f24a
+
+Span:    log.v1.Log.ConsumeStream
+Status:   [0]
+Elapsed: 1.001s
+SpanKind: Server
+
+Attributes:
+  - FailFast=false
+  - Client=false
+
+MessageEvents:
+Received
+UncompressedByteSize: 0
+CompressedByteSize: 5
+
+Sent
+UncompressedByteSize: 17
+CompressedByteSize: 22
+
+Sent
+UncompressedByteSize: 20
+CompressedByteSize: 25
+
