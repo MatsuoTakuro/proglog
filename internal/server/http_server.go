@@ -11,14 +11,14 @@ type httpServer struct {
 	Log *Log
 }
 
-func newHttpServer() *httpServer {
+func newHTTPServer() *httpServer {
 	return &httpServer{
 		Log: NewLog(),
 	}
 }
 
-func NewHttpServer(addr string) *http.Server {
-	httpsrv := newHttpServer()
+func NewHTTPServer(addr string) *http.Server {
+	httpsrv := newHTTPServer()
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", httpsrv.handleProduce).Methods("POST")

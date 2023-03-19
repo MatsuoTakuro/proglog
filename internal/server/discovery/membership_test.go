@@ -29,13 +29,13 @@ func TestMembership(t *testing.T) {
 	// assert this by each 250 mili seconds in three seconds.
 	require.Eventually(t, func() bool {
 		return len(handler.joinEvents) == 2 &&
-			// a return value of Members() remains 3, not 2.
+			// a return value of Members() should remain 3, not 2.
 			len(m[0].Members()) == 3 &&
 			m[0].Members()[2].Status == serf.StatusLeft &&
 			len(handler.leaveEvents) == 1
 	}, 3*time.Second, 250*time.Millisecond)
 
-	// assert whether "2" is the id of the last member to leave the cluster.
+	// assert whether "2" should be the id (NodeName) of the last member to leave the cluster.
 	require.Equal(t, "2", <-handler.leaveEvents)
 }
 

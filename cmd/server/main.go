@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	srv := server.NewHttpServer(":18080")
+	srv := server.NewHTTPServer(":18080")
 	fmt.Printf("server starting at %s\n", srv.Addr)
 	log.Fatal(srv.ListenAndServe())
 }
