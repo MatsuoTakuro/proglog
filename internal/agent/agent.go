@@ -6,15 +6,16 @@ import (
 	"net"
 	"sync"
 
-	api "github.com/MatsuoTakuro/proglog/api/v1"
+	"go.uber.org/zap"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
+	api "github.com/MatsuoTakuro/proglog/api/v1"
 	"github.com/MatsuoTakuro/proglog/internal/auth"
 	"github.com/MatsuoTakuro/proglog/internal/log"
 	"github.com/MatsuoTakuro/proglog/internal/server"
 	"github.com/MatsuoTakuro/proglog/internal/server/discovery"
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 // Agent runs on every service instance and has all settings for all componets (replicator, membership, log, and server)
@@ -26,9 +27,8 @@ type Agent struct {
 	membership *discovery.Membership
 	replicator *log.Replicator
 
-	isShutdown    bool
-	shutdowns     chan struct{}
-	shutdownsLock sync.Mutex
+	isShutdown   bool
+	shutdownLock sync.Mutex
 }
 
 type Config struct {
@@ -36,7 +36,7 @@ type Config struct {
 	PeerTLSConfig   *tls.Config // a tls config for runing a peer local server to save replications of records from other servers
 	DataDir         string
 	BindAddr        string
-	PRCPort         int
+	RPCPort         int
 	NodeName        string
 	StartJoinAddrs  []string
 	ACLModelFile    string
@@ -49,7 +49,7 @@ func (c Config) RPCAddr() (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%s:%d", host, c.PRCPort), nil
+	return fmt.Sprintf("%s:%d", host, c.RPCPort), nil
 }
 
 func New(cfg Config) (*Agent, error) {
@@ -136,35 +136,6 @@ func (a *Agent) setupServer() error {
 	return nil
 }
 
-func (a *Agent) Shutdown() error {
-	a.shutdownsLock.Lock()
-	defer a.shutdownsLock.Unlock()
-
-	if a.isShutdown {
-		return nil
-	}
-	a.isShutdown = true
-	close(a.shutdowns)
-
-	allShutdown := []func() error{
-		// shut down each component in the reverse order of setup.
-		a.membership.Leave,
-		a.replicator.Close,
-		func() error {
-			a.server.GracefulStop()
-			return nil
-		},
-		a.log.Close,
-	}
-	for _, fn := range allShutdown {
-		if err := fn(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (a *Agent) setupMembership() error {
 	rpcAddr, err := a.RPCAddr()
 	if err != nil {
@@ -202,4 +173,32 @@ func (a *Agent) setupMembership() error {
 	)
 
 	return err
+}
+
+func (a *Agent) Shutdown() error {
+	a.shutdownLock.Lock()
+	defer a.shutdownLock.Unlock()
+
+	if a.isShutdown {
+		return nil
+	}
+	a.isShutdown = true
+
+	allShutdowns := []func() error{
+		// shut down each component in the reverse order of setup.
+		a.membership.Leave,
+		a.replicator.Close,
+		func() error {
+			a.server.GracefulStop()
+			return nil
+		},
+		a.log.Close,
+	}
+	for _, fn := range allShutdowns {
+		if err := fn(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
