@@ -9,7 +9,7 @@ import (
 
 var (
 	record     = []byte("hello world")
-	totalWidth = uint64(len(record) + recordSizeWidth)
+	totalWidth = uint64(len(record) + RecordSizeWidth)
 )
 
 func TestStoreAppendAndRead(t *testing.T) {
@@ -58,13 +58,13 @@ func testReadAt(t *testing.T, s *store) {
 	t.Helper()
 
 	for i, off := uint64(1), int64(0); i < 4; i++ {
-		sizeb := make([]byte, recordSizeWidth)
+		sizeb := make([]byte, RecordSizeWidth)
 		nr, err := s.ReadAt(sizeb, off)
 		require.NoError(t, err)
-		require.Equal(t, recordSizeWidth, nr)
+		require.Equal(t, RecordSizeWidth, nr)
 		off += int64(nr)
 
-		size := enc.Uint64(sizeb)
+		size := Enc.Uint64(sizeb)
 		read := make([]byte, size)
 		nr, err = s.ReadAt(read, off)
 		require.NoError(t, err)

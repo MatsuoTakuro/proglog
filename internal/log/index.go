@@ -94,9 +94,9 @@ func (i *index) Read(input int64) (off uint32, position uint64, err error) {
 	}
 
 	// read offset value as output
-	off = enc.Uint32(i.mmap[position : position+offWidth])
+	off = Enc.Uint32(i.mmap[position : position+offWidth])
 	// read position value as output
-	position = enc.Uint64(i.mmap[position+offWidth : position+endWidth])
+	position = Enc.Uint64(i.mmap[position+offWidth : position+endWidth])
 
 	return off, position, nil
 }
@@ -106,8 +106,8 @@ func (i *index) Write(off uint32, position uint64) error {
 		return io.EOF
 	}
 
-	enc.PutUint32(i.mmap[i.size:i.size+offWidth], off)
-	enc.PutUint64(i.mmap[i.size+offWidth:i.size+endWidth], position)
+	Enc.PutUint32(i.mmap[i.size:i.size+offWidth], off)
+	Enc.PutUint64(i.mmap[i.size+offWidth:i.size+endWidth], position)
 	i.size += uint64(endWidth)
 
 	return nil

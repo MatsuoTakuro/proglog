@@ -48,7 +48,7 @@ func TestSegment(t *testing.T) {
 	require.NoError(t, s.Close())
 
 	recordBytes, _ := proto.Marshal(want)
-	cfg.Segment.MaxStoreBytes = uint64(len(recordBytes)+recordSizeWidth) * 4
+	cfg.Segment.MaxStoreBytes = uint64(len(recordBytes)+RecordSizeWidth) * 4
 	cfg.Segment.MaxIndexBytes = 1024
 	// reboot the exisiting segment
 	s, err = newSegment(dir, baseOffset, cfg)

@@ -9,12 +9,12 @@ import (
 
 var (
 	// order of encoding to binary (binary-serialization)
-	enc = binary.BigEndian
+	Enc = binary.BigEndian
 )
 
 const (
 	// fixed width to store size of record
-	recordSizeWidth = 8
+	RecordSizeWidth = 8
 )
 
 type store struct {
@@ -45,7 +45,7 @@ func (s *store) Append(record []byte) (n uint64, position uint64, err error) {
 	position = s.size
 	// write size of record
 	// you can specify size (bytes) of record when you read the record
-	if err := binary.Write(s.buf, enc, uint64(len(record))); err != nil {
+	if err := binary.Write(s.buf, Enc, uint64(len(record))); err != nil {
 		return 0, 0, err
 	}
 
@@ -55,7 +55,7 @@ func (s *store) Append(record []byte) (n uint64, position uint64, err error) {
 		return 0, 0, err
 	}
 
-	nw += recordSizeWidth
+	nw += RecordSizeWidth
 	s.size += uint64(nw)
 	return uint64(nw), position, nil
 }
@@ -69,14 +69,14 @@ func (s *store) Read(position uint64) ([]byte, error) {
 	}
 
 	// read size of record
-	size := make([]byte, recordSizeWidth)
+	size := make([]byte, RecordSizeWidth)
 	if _, err := s.File.ReadAt(size, int64(position)); err != nil {
 		return nil, err
 	}
 
 	// read record
-	record := make([]byte, enc.Uint64(size))
-	if _, err := s.File.ReadAt(record, int64(position+recordSizeWidth)); err != nil {
+	record := make([]byte, Enc.Uint64(size))
+	if _, err := s.File.ReadAt(record, int64(position+RecordSizeWidth)); err != nil {
 		return nil, err
 	}
 
