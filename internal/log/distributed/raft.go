@@ -15,12 +15,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type RequestType uint8
-
-const (
-	AppendRequestType RequestType = iota
-)
-
 // fsm executes or applies commands given from Raft.
 // 'fsm' stands for finite state machine.
 // it implements raft.FSM interface.
@@ -32,9 +26,9 @@ var _ raft.FSM = (*fsm)(nil)
 
 func (f *fsm) Apply(record *raft.Log) interface{} {
 	buf := record.Data
-	reqType := RequestType(buf[0])
+	reqType := log.RequestType(buf[0])
 	switch reqType {
-	case AppendRequestType:
+	case log.AppendRequestType:
 		return f.applyAppend(buf[1:])
 	}
 	return nil

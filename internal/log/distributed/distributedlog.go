@@ -155,7 +155,7 @@ func (dl *DistributedLog) setupRaft(dataDir string) error {
 
 func (dl *DistributedLog) Append(record *api.Record) (uint64, error) {
 	resp, err := dl.apply(
-		AppendRequestType,
+		log.AppendRequestType,
 		&api.ProduceRequest{Record: record},
 	)
 	if err != nil {
@@ -165,7 +165,7 @@ func (dl *DistributedLog) Append(record *api.Record) (uint64, error) {
 	return resp.(*api.ProduceResponse).Offset, nil
 }
 
-func (dl *DistributedLog) apply(reqType RequestType, req proto.Message) (
+func (dl *DistributedLog) apply(reqType log.RequestType, req proto.Message) (
 	interface{},
 	error,
 ) {

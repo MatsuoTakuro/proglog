@@ -106,6 +106,7 @@ $(CONFIG_PATH)/model.conf:
 
 .PHONY: test
 test: $(CONFIG_PATH)/policy.csv $(CONFIG_PATH)/model.conf
+	go clean -testcache
 	go test -race ./...
 
 test_with_observability:

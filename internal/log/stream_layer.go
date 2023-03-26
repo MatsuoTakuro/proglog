@@ -10,12 +10,6 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-type ConnectionType uint8
-
-const (
-	RaftRPC ConnectionType = iota + 1
-)
-
 // StreamLayer provides an abstruction of low layer stream to connect with other raft servers.
 // it implements raft.StreamLayer interface.
 type StreamLayer struct {

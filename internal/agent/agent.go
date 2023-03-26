@@ -1,31 +1,36 @@
 package agent
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	api "github.com/MatsuoTakuro/proglog/api/v1"
 	"github.com/MatsuoTakuro/proglog/internal/auth"
 	"github.com/MatsuoTakuro/proglog/internal/log"
+	"github.com/MatsuoTakuro/proglog/internal/log/distributed"
 	"github.com/MatsuoTakuro/proglog/internal/server"
 	"github.com/MatsuoTakuro/proglog/internal/server/discovery"
+	"github.com/hashicorp/raft"
+	"github.com/soheilhy/cmux"
 )
 
 // Agent runs on every service instance and has all settings for all componets (replicator, membership, log, and server)
 type Agent struct {
 	Config
 
-	log        *log.Log
+	mux        cmux.CMux
+	log        *distributed.DistributedLog
 	server     *grpc.Server
 	membership *discovery.Membership
-	replicator *log.Replicator
 
 	isShutdown   bool
 	shutdownLock sync.Mutex
@@ -41,6 +46,7 @@ type Config struct {
 	StartJoinAddrs  []string
 	ACLModelFile    string
 	ACLPolicyFile   string
+	Bootstrap       bool
 }
 
 func (c Config) RPCAddr() (string, error) {
@@ -59,6 +65,7 @@ func New(cfg Config) (*Agent, error) {
 	setup := []func() error{
 		// set up each component in the reverse order of shutdown.
 		a.setupLogger,
+		a.setupMux,
 		a.setupLog,
 		a.setupServer,
 		a.setupMembership,
@@ -69,6 +76,8 @@ func New(cfg Config) (*Agent, error) {
 			return nil, err
 		}
 	}
+
+	go a.serve()
 
 	return a, nil
 }
@@ -83,13 +92,54 @@ func (a *Agent) setupLogger() error {
 	return nil
 }
 
-func (a *Agent) setupLog() error {
-	var err error
-	a.log, err = log.NewLog(
-		a.DataDir,
-		log.Config{},
+func (a *Agent) setupMux() error {
+	rpcAddr := fmt.Sprintf(
+		":%d",
+		a.Config.RPCPort,
 	)
 
+	ln, err := net.Listen("tcp", rpcAddr)
+	if err != nil {
+		return err
+	}
+
+	a.mux = cmux.New(ln)
+	return nil
+}
+
+func (a *Agent) setupLog() error {
+	// prepare a matcher for raft connection
+	raftLn := a.mux.Match(func(r io.Reader) bool {
+		b := make([]byte, 1)
+		// read the fist byte in the socket of every connection
+		if _, err := r.Read(b); err != nil {
+			return false
+		}
+		return bytes.Equal(b, []byte{byte(log.RaftRPC)})
+	})
+
+	logCfg := log.Config{}
+	logCfg.Raft.StreamLayer = log.NewStreamLayer(
+		raftLn,
+		a.Config.ServerTLSConfig,
+		a.Config.PeerTLSConfig,
+	)
+	logCfg.Raft.LocalID = raft.ServerID(a.Config.NodeName)
+	logCfg.Raft.Bootstrap = a.Config.Bootstrap
+	logCfg.Raft.CommitTimeout = 1000 * time.Millisecond
+
+	var err error
+	a.log, err = distributed.NewDistributedLog(
+		a.Config.DataDir,
+		logCfg,
+	)
+	if err != nil {
+		return err
+	}
+
+	if a.Config.Bootstrap {
+		err = a.log.WaitForLeader(3 * time.Second)
+	}
 	return err
 }
 
@@ -118,17 +168,11 @@ func (a *Agent) setupServer() error {
 		return err
 	}
 
-	rpcAddr, err := a.RPCAddr()
-	if err != nil {
-		return err
-	}
-	ln, err := net.Listen("tcp", rpcAddr)
-	if err != nil {
-		return err
-	}
-
+	// if a connection does not match a matcher for raft,
+	// assign a listener for grpc (grpcLn) to it (and otherwise raftLn).
+	grpcLn := a.mux.Match(cmux.Any())
 	go func() {
-		if err := a.server.Serve(ln); err != nil {
+		if err := a.server.Serve(grpcLn); err != nil {
 			_ = a.Shutdown()
 		}
 	}()
@@ -142,26 +186,7 @@ func (a *Agent) setupMembership() error {
 		return err
 	}
 
-	var opts []grpc.DialOption
-	if a.PeerTLSConfig != nil {
-		opts = append(opts,
-			grpc.WithTransportCredentials(
-				credentials.NewTLS(a.PeerTLSConfig),
-			),
-		)
-	}
-
-	conn, err := grpc.Dial(rpcAddr, opts...)
-	if err != nil {
-		return err
-	}
-	cli := api.NewLogClient(conn)
-	a.replicator = &log.Replicator{
-		LocalServer: cli,
-		DialOpts:    opts,
-	}
-	a.membership, err = discovery.New(
-		a.replicator,
+	a.membership, err = discovery.New(a.log,
 		discovery.Config{
 			NodeName: a.NodeName,
 			BindAddr: a.BindAddr,
@@ -187,7 +212,6 @@ func (a *Agent) Shutdown() error {
 	allShutdowns := []func() error{
 		// shut down each component in the reverse order of setup.
 		a.membership.Leave,
-		a.replicator.Close,
 		func() error {
 			a.server.GracefulStop()
 			return nil
@@ -198,6 +222,15 @@ func (a *Agent) Shutdown() error {
 		if err := fn(); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (a *Agent) serve() error {
+	if err := a.mux.Serve(); err != nil {
+		_ = a.Shutdown()
+		return err
 	}
 
 	return nil

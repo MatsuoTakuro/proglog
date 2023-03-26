@@ -8,7 +8,9 @@ type Config struct {
 	Raft struct {
 		raft.Config
 		StreamLayer *StreamLayer
-		Bootstrap   bool
+		// Bootstrap is whether it is an initial node that needs to bootstrapp nor not.
+		// After it bootstrapps, it will be the first leader and add other servers (nodes) that won't bootstrapp later.
+		Bootstrap bool
 	}
 	Segment struct {
 		MaxStoreBytes uint64
