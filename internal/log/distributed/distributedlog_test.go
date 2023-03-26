@@ -91,12 +91,25 @@ func TestMultipleNodes(t *testing.T) {
 		}, 500*time.Millisecond, 50*time.Millisecond)
 	}
 
+	srvs, err := dlogs[0].GetServers()
+	require.NoError(t, err)
+	require.Equal(t, 3, len(srvs))
+	require.True(t, srvs[0].IsLeader)
+	require.False(t, srvs[1].IsLeader)
+	require.False(t, srvs[2].IsLeader)
+
 	// make the seconde node leave the cluster.
 	leaveIDStr := "1"
-	err := dlogs[0].Leave(leaveIDStr)
+	err = dlogs[0].Leave(leaveIDStr)
 	require.NoError(t, err)
 
 	time.Sleep(50 * time.Millisecond)
+
+	srvs, err = dlogs[0].GetServers()
+	require.NoError(t, err)
+	require.Equal(t, 2, len(srvs))
+	require.True(t, srvs[0].IsLeader)
+	require.False(t, srvs[1].IsLeader)
 
 	// add a record to the leader node.
 	off, err := dlogs[0].Append(&api.Record{

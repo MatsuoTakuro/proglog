@@ -91,7 +91,7 @@ func TestAgent(t *testing.T) {
 			err := a.Shutdown()
 			require.NoError(t, err)
 			// NOTE: comment out this line if you want to leave logs in your local DataDir.
-			// require.NoError(t, os.RemoveAll(a.DataDir))
+			require.NoError(t, os.RemoveAll(a.DataDir))
 		}
 	}()
 	// takes some time to discover each node

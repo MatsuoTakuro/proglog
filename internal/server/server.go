@@ -43,10 +43,16 @@ type Authorizer interface {
 	Authorize(subject, object, action string) error
 }
 
+// abstract getserverer behavior as an interface
+type GetServerer interface {
+	GetServers() ([]*api.Server, error)
+}
+
 // Config is a config for a grpc server
 type Config struct {
-	CommitLog  CommitLog  // embedded interface. this reverses server dependencies on log implementations
-	Authorizer Authorizer // embedded interface. this reverses server dependencies on authorizer implementations
+	CommitLog   CommitLog   // embedded interface. this reverses server dependencies on log implementations
+	Authorizer  Authorizer  // embedded interface. this reverses server dependencies on authorizer implementations
+	GetServerer GetServerer // embedded interface. this reverses server dependencies on getserverer implementations
 }
 
 func NewGRPCServer(cfg *Config, grpcOpts ...grpc.ServerOption) (
@@ -197,4 +203,15 @@ func (s *grpcServer) ConsumeStream(
 			req.Offset++
 		}
 	}
+}
+
+func (s *grpcServer) GetServers(
+	ctx context.Context, req *api.GetServersRequest,
+) (*api.GetServersResponse, error) {
+	srvs, err := s.GetServerer.GetServers()
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.GetServersResponse{Servers: srvs}, nil
 }

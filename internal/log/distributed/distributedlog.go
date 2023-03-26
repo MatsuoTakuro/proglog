@@ -26,6 +26,7 @@ type DistributedLog struct {
 }
 
 var _ server.CommitLog = (*DistributedLog)(nil)
+var _ server.GetServerer = (*DistributedLog)(nil)
 var _ discovery.Handler = (*DistributedLog)(nil)
 
 func NewDistributedLog(dataDir string, cfg log.Config) (
@@ -267,4 +268,22 @@ func (dl *DistributedLog) Close() error {
 	}
 
 	return dl.log.Close()
+}
+
+func (dl *DistributedLog) GetServers() ([]*api.Server, error) {
+	future := dl.raft.GetConfiguration()
+	if err := future.Error(); err != nil {
+		return nil, err
+	}
+
+	var srvs []*api.Server
+	for _, srv := range future.Configuration().Servers {
+		srvs = append(srvs, &api.Server{
+			Id:       string(srv.ID),
+			RpcAddr:  string(srv.Address),
+			IsLeader: dl.raft.Leader() == srv.Address,
+		})
+	}
+
+	return srvs, nil
 }
