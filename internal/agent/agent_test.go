@@ -11,11 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/travisjeffery/go-dynaport"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
 	api "github.com/MatsuoTakuro/proglog/api/v1"
 	"github.com/MatsuoTakuro/proglog/internal/config"
+	"github.com/MatsuoTakuro/proglog/loadbalance"
 )
 
 func TestAgent(t *testing.T) {
@@ -110,6 +112,9 @@ func TestAgent(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// wait some time to complete all replications
+	time.Sleep(3 * time.Second)
+
 	// consume the produced record from the 1st server
 	consumeResp, err := leaderCli.Consume(
 		context.Background(),
@@ -119,9 +124,6 @@ func TestAgent(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, consumeResp.Record.Value, want)
-
-	// wait some time to complete all replications
-	time.Sleep(3 * time.Second)
 
 	// create a client for the 2nd server and consume a record
 	// that would have been replicated from the 1st server.
@@ -145,8 +147,8 @@ func TestAgent(t *testing.T) {
 	)
 	require.Nil(t, consumeResp)
 	require.Error(t, err)
-	wantStatus := status.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
 	gotStatus := status.Code(err)
+	wantStatus := codes.OutOfRange
 	require.Equal(t, gotStatus, wantStatus)
 }
 
@@ -163,7 +165,10 @@ func client(
 	rpcAddr, err := a.RPCAddr()
 	require.NoError(t, err)
 
-	conn, err := grpc.Dial(rpcAddr, opts...)
+	conn, err := grpc.Dial(
+		fmt.Sprintf("%s:///%s",
+			loadbalance.Name, rpcAddr),
+		opts...)
 	require.NoError(t, err)
 
 	cli := api.NewLogClient(conn)
